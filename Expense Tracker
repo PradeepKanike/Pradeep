@@ -1,0 +1,82 @@
+import tkinter as tk
+from tkinter import messagebox
+import sqlite3
+
+# Database setup
+conn = sqlite3.connect('expenses.db')
+c = conn.cursor()
+c.execute('''
+    CREATE TABLE IF NOT EXISTS expenses (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        amount REAL,
+        category TEXT,
+        description TEXT,
+        date TEXT
+    )
+''')
+conn.commit()
+
+# Function to add an expense
+def add_expense():
+    amount = entry_amount.get()
+    category = entry_category.get()
+    description = entry_description.get()
+    date = entry_date.get()
+
+    if amount and category and date:
+        c.execute('INSERT INTO expenses (amount, category, description, date) VALUES (?, ?, ?, ?)',
+                  (amount, category, description, date))
+        conn.commit()
+        entry_amount.delete(0, tk.END)
+        entry_category.delete(0, tk.END)
+        entry_description.delete(0, tk.END)
+        entry_date.delete(0, tk.END)
+        messagebox.showinfo("Success", "Expense added successfully!")
+    else:
+        messagebox.showwarning("Input Error", "Please fill in all required fields.")
+
+# Function to view all expenses
+def view_expenses():
+    c.execute('SELECT * FROM expenses')
+    records = c.fetchall()
+
+    # Clear the text widget
+    text_expenses.delete(1.0, tk.END)
+
+    # Display the records in the text widget
+    for record in records:
+        text_expenses.insert(tk.END, f"{record}\n")
+
+# GUI setup
+root = tk.Tk()
+root.title("Expense Tracker")
+
+tk.Label(root, text="Amount:").grid(row=0, column=0, padx=10, pady=10)
+entry_amount = tk.Entry(root)
+entry_amount.grid(row=0, column=1, padx=10, pady=10)
+
+tk.Label(root, text="Category:").grid(row=1, column=0, padx=10, pady=10)
+entry_category = tk.Entry(root)
+entry_category.grid(row=1, column=1, padx=10, pady=10)
+
+tk.Label(root, text="Description:").grid(row=2, column=0, padx=10, pady=10)
+entry_description = tk.Entry(root)
+entry_description.grid(row=2, column=1, padx=10, pady=10)
+
+tk.Label(root, text="Date (YYYY-MM-DD):").grid(row=3, column=0, padx=10, pady=10)
+entry_date = tk.Entry(root)
+entry_date.grid(row=3, column=1, padx=10, pady=10)
+
+btn_add = tk.Button(root, text="Add Expense", command=add_expense)
+btn_add.grid(row=4, column=0, columnspan=2, pady=10)
+
+btn_view = tk.Button(root, text="View Expenses", command=view_expenses)
+btn_view.grid(row=5, column=0, columnspan=2, pady=10)
+
+text_expenses = tk.Text(root, height=10, width=50)
+text_expenses.grid(row=6, column=0, columnspan=2, pady=10)
+
+root.mainloop()
+
+# Close the database connection when the application closes
+conn.close()
